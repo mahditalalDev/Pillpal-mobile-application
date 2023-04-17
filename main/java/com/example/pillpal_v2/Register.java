@@ -40,8 +40,10 @@ public class Register extends AppCompatActivity {
     private Button registerBtn;
     private TextView goToLogin;
     boolean valid = true;
+    DocumentReference df,dd;
     FirebaseAuth fAuth;
     FirebaseFirestore fStore;
+    String firstTimeLogin;
 
     @SuppressLint("WrongViewCast")
     @Override
@@ -110,12 +112,14 @@ public class Register extends AppCompatActivity {
                                     // Save user data to Firestore after the email is verified
                                     user.reload();
                                     if (isPharma.isChecked()) {
-                                        DocumentReference df = fStore.collection("PharmaUsers").document(user.getUid());
-                                        DocumentReference dd = fStore.collection("users").document(user.getUid());
+                                        df = fStore.collection("PharmaUsers").document(registerEmail.getText().toString());
+                                         dd = fStore.collection("users").document(registerEmail.getText().toString());
                                         Map<String, Object> userInfo = new HashMap<>();
                                         userInfo.put("Fullname", registerName.getText().toString());
                                         userInfo.put("UserEmail", registerEmail.getText().toString());
                                         userInfo.put("PhoneNumber", phoneNumber.getText().toString());
+                                        firstTimeLogin="1";
+                                        userInfo.put("first time login ",firstTimeLogin);
 
                                         // Specify if the user is admin
                                         userInfo.put("isPharma", "1");
@@ -129,23 +133,29 @@ public class Register extends AppCompatActivity {
 
 
                                     } else if (isPatient.isChecked()) {
-                                        DocumentReference df = fStore.collection("PatientUsers").document(user.getUid());
-                                        DocumentReference dd = fStore.collection("users").document(user.getUid());
+                                         df = fStore.collection("PatientUsers").document(registerEmail.getText().toString());
+                                        dd = fStore.collection("users").document(registerEmail.getText().toString());
 
                                         Map<String, Object> userInfo = new HashMap<>();
                                         userInfo.put("Fullname", registerName.getText().toString());
                                         userInfo.put("UserEmail", registerEmail.getText().toString());
                                         userInfo.put("PhoneNumber", phoneNumber.getText().toString());
+                                        firstTimeLogin="1";
+                                        userInfo.put("first time login",firstTimeLogin);
 
                                         // Specify if the user is admin
                                         userInfo.put("isPharma", "0");
                                         userInfo.put("isPatient", "1");
                                         df.set(userInfo);
                                         dd.set(userInfo);
+                                        dd.set(userInfo);
+                                        Intent intent = new Intent(getApplicationContext(), Login.class);
+                                        startActivity(intent);
+                                        finish();
 
 
                                     }
-                               finish();
+                                    finish();
                                 } else {
                                     Toast.makeText(Register.this, "Failed to send verification email", Toast.LENGTH_SHORT).show();
                                 }
@@ -155,7 +165,7 @@ public class Register extends AppCompatActivity {
             }
         });
 
-       ;
+        ;
     }
 
     public boolean checkField(EditText textField) {

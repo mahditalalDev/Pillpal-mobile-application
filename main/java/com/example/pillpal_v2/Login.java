@@ -1,5 +1,7 @@
 package com.example.pillpal_v2;
 
+import android.content.Intent;
+
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,6 +17,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.pillpal_v2.Patient;
+import com.example.pillpal_v2.PatientInfo;
+import com.example.pillpal_v2.PharmaInfo;
+import com.example.pillpal_v2.Pharmacy;
+import com.example.pillpal_v2.R;
+import com.example.pillpal_v2.Register;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -28,17 +36,22 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Login extends AppCompatActivity {
 
     private TextInputLayout emailw;
     private TextInputLayout passwordw;
     private Button loginBtn;
-    private TextView gotoRegister;
+    private TextView gotoRegister,forgotpassword;
 
     private boolean valid = true;
     private FirebaseAuth fAuth;
     private FirebaseFirestore fStore;
     private SharedPreferences sharedPreferences;
+    String isPharma, isPatient, firstTimeLogin;
+    DocumentReference dd,df;
 
     @SuppressLint({"WrongViewCast", "MissingInflatedId"})
     @Override
@@ -55,8 +68,29 @@ public class Login extends AppCompatActivity {
         loginBtn = findViewById(R.id.loginBtn);
         EditText email = emailw.getEditText();
         EditText password = passwordw.getEditText();
-
+forgotpassword=findViewById(R.id.forget_password);
         sharedPreferences = getSharedPreferences("PillPalPrefs", MODE_PRIVATE);
+        forgotpassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String email = emailw.getEditText().getText().toString().trim();
+                if (TextUtils.isEmpty(email)) {
+                    emailw.setError("Please enter your email");
+                } else {
+                    fAuth.sendPasswordResetEmail(email).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Toast.makeText(Login.this, "Reset password link sent to your email", Toast.LENGTH_SHORT).show();
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(Login.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        });
 
         gotoRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -97,7 +131,7 @@ public class Login extends AppCompatActivity {
     }
 
     private void checkUserAccessLevel(String uid) {
-        DocumentReference df = fStore.collection("users").document(uid);
+        df = fStore.collection("users").document(emailw.getEditText().getText().toString());
 
         df.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
@@ -105,24 +139,35 @@ public class Login extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     DocumentSnapshot documentSnapshot = task.getResult();
                     if (documentSnapshot.exists()) {
-                        String isPharma = documentSnapshot.getString("isPharma");
-                        String isPatient = documentSnapshot.getString("isPatient");
-
-                        if ("1".equals(isPharma)) {
-                            if (sharedPreferences.getBoolean("isFirstTimePharmaLogin", true)) {
-                                startActivity(new Intent(getApplicationContext(), PharmaInfo.class));
-                                sharedPreferences.edit().putBoolean("isFirstTimePharmaLogin", false).apply();
-                            } else {
-                                startActivity(new Intent(getApplicationContext(), Pharmacy.class));
-                            }
-                            finish();
+                        isPharma = documentSnapshot.getString("isPharma");
+                        isPatient = documentSnapshot.getString("isPatient");
+                        firstTimeLogin = documentSnapshot.getString("first time login ");
+                        if ("1".equals(firstTimeLogin)) {
+                            dd = fStore.collection("users").document(emailw.getEditText().getText().toString());
+                            Map<String, Object> userInfo = new HashMap<>();
+                            userInfo.put("first time login ", "0");
+                            dd.update(userInfo).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void unused) {
+                                    if ("1".equals(isPharma)) {
+                                        startActivity(new Intent(getApplicationContext(), PharmaInfo.class));
+                                        finish();
+                                    } else if ("1".equals(isPatient)) {
+                                        startActivity(new Intent(getApplicationContext(), PatientInfo.class));
+                                        finish();
+                                    }
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(Login.this, "Error updating user data", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                         } else if ("1".equals(isPatient)) {
-                            if (sharedPreferences.getBoolean("isFirstTimePatientLogin", true)) {
-                                startActivity(new Intent(getApplicationContext(), PatientInfo.class));
-                                sharedPreferences.edit().putBoolean("isFirstTimePatientLogin", false).apply();
-                            } else {
-                                startActivity(new Intent(getApplicationContext(), Patient.class));
-                            }
+                            startActivity(new Intent(getApplicationContext(), Patient.class));
+                            finish();
+                        } else if ("1".equals(isPharma)){
+                            startActivity(new Intent(getApplicationContext(),Pharmacy.class));
                             finish();
                         } else {
                             Toast.makeText(Login.this, "Unknown user access level", Toast.LENGTH_SHORT).show();
@@ -149,5 +194,5 @@ public class Login extends AppCompatActivity {
         return valid;
     }
 
-;
+    ;
 }

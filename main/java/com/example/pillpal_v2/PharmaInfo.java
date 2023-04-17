@@ -24,6 +24,7 @@ public class PharmaInfo extends AppCompatActivity {
     private EditText phoneNumber;
     private Button submitButton;
     private FirebaseFirestore db;
+    String pharmaName,place,phone,email;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +35,7 @@ public class PharmaInfo extends AppCompatActivity {
 
         // Get views by ID
         pharmaNameEditText = findViewById(R.id.pharmaNameEditText);
-        placeEditText = findViewById(R.id.placeEditText);
+        placeEditText = findViewById(R.id.address_input);
         phoneNumber = findViewById(R.id.phoneNumber);
         submitButton = findViewById(R.id.submitButton);
 
@@ -43,10 +44,10 @@ public class PharmaInfo extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // Get input values
-                String pharmaName = pharmaNameEditText.getText().toString().trim();
-                String place = placeEditText.getText().toString().trim();
-                String phone = phoneNumber.getText().toString().trim();
-                String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+                 pharmaName = pharmaNameEditText.getText().toString().trim();
+                place = placeEditText.getText().toString().trim();
+                 phone = phoneNumber.getText().toString().trim();
+                email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
 
                 // Create a new document with email as the document ID
                 Map<String, Object> pharmacyInfo = new HashMap<>();
